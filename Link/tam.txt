@@ -1,0 +1,183 @@
+import threading
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+import time
+import os
+import random
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.action_chains import ActionChains
+
+# Tạo một Event để đồng bộ hóa giữa hai luồng
+data_written_event = threading.Event()
+
+# Hàm để chạy trong luồng 1 để thực hiện các thao tác Selenium và ghi dữ liệu vào file
+def luong_1():
+    # Khởi tạo trình duyệt Selenium với user-data-dir được chỉ định
+    chrome_options = ChromeOptions()
+    # chrome_options.add_argument('--headless')
+    # chrome_options.add_argument(f'user-data-dir=C:\\Users\\moret\\OneDrive\\デスクトップ\\py\\Link\\U1')
+
+    # Khởi tạo trình duyệt
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=chrome_options
+    )
+
+    # Mở một trang web
+    driver.get("https://internxt.com/temporary-email")
+
+    # Đợi 5 giây để trang web tải hoàn chỉnh
+    time.sleep(3)
+
+    # Tìm thẻ button có văn bản là "Delete email" và thực hiện thao tác click
+    delete_button_xpath = "//button[contains(., 'Delete email')]"
+    delete_button = driver.find_element(By.XPATH, delete_button_xpath)
+    delete_button.click()
+
+    time.sleep(3)
+
+    # Tìm phần tử bằng đường dẫn XPath đầy đủ
+    email_div = driver.find_element(By.XPATH, "//div[contains(@class, 'flex') and contains(@class, 'h-full') and contains(@class, 'w-full') and contains(@class, 'cursor-pointer') and contains(@class, 'flex-row') and contains(@class, 'items-center') and contains(@class, 'justify-between') and contains(@class, 'rounded-xl') and contains(@class, 'bg-gray-1') and contains(@class, 'shadow-sm') and contains(@class, 'px-4') and contains(@class, 'py-3')]")
+
+    # Lấy nội dung văn bản của phần tử
+    element_text = email_div.text
+
+    # Ghi nội dung vào file a.txt
+    with open("email.txt", "w", encoding="utf-8") as file:
+        file.write(element_text)
+
+    # Đóng file sau khi hoàn thành
+    file.close()
+
+    # Đặt sự kiện để thông báo cho luồng 2 rằng dữ liệu đã được ghi
+    data_written_event.set()
+
+    # In ra màn hình
+    print("Element text:", element_text)
+
+    # Đóng trình duyệt
+    time.sleep(100)
+    driver.quit()
+
+# Hàm để chạy trong luồng 2 để mở trang Google.com sau khi dữ liệu đã được ghi vào file
+def luong_2():
+    while True:
+        # Đợi sự kiện cho biết dữ liệu đã được ghi
+        data_written_event.wait()
+
+        # Kiểm tra nếu file email.txt có dữ liệu
+        if os.path.exists('email.txt') and os.path.getsize('email.txt') > 0:
+            # Đọc nội dung từ file và in ra màn hình
+            with open("email.txt", "r", encoding="utf-8") as file:
+                content = file.read()
+                print("Content in email.txt:", content)
+
+            # Khởi tạo trình duyệt Selenium với user-data-dir được chỉ định
+            chrome_options = ChromeOptions()
+            chrome_options.add_argument(f'/Users/dev/Desktop/XProjet/User/U1')
+            # chrome_options.add_argument('--headless')
+
+            # Khởi tạo trình duyệt
+            driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=chrome_options
+            )
+            # Mở trang Google.com bằng Selenium
+            driver = webdriver.Chrome()  # Cần đảm bảo bạn đã cài đặt ChromeDriver và đường dẫn nó trong biến môi trường PATH
+            driver.get('https://twitter.com/')
+
+            # Ngủ 3 giây (hoặc thời gian cần thiết) để đảm bảo trang web đã mở
+            time.sleep(3)
+
+            # nhấn nút Tạo tài khoản
+            click_button(driver, 'Tạo tài khoản')
+
+            # nhập tên người dùng
+            fill_input_field(driver, "name", "Your Name")
+
+            # nhấn nút Sử dụng email
+            click_button(driver, 'Sử dụng email')
+
+            # nhập mail
+            fill_input_field(driver, "email", content)
+
+            #  ngày sinh
+            select_random_option(driver, "SELECTOR_1", 1, 12)
+
+            #  tháng sinh
+            select_random_option(driver, "SELECTOR_2", 1, 28)
+
+            #  năm sinh
+            select_random_option(driver, "SELECTOR_3", 1980, 1995)
+
+            # nhấn nút tiếp theo
+            click_button(driver, 'Tiếp theo')
+
+            # nhấn nút tiếp theo
+            click_button(driver, 'Tiếp theo')
+
+            # nhấn nút đăng ký
+            click_button(driver, 'Đăng ký')
+
+            data_written_event.clear()
+
+            # Ngủ 5 giây (hoặc thời gian cần thiết) để đảm bảo trang web đã mở
+            time.sleep(50)
+
+            # Đóng trình duyệt
+            driver.quit()
+
+        # Ngủ 1 giây trước khi lặp lại
+        time.sleep(1)
+
+
+def select_random_option(driver, select_id, start, end, sleep_time=1):
+    time.sleep(sleep_time)
+
+    # Find the <select> element by its ID
+    select_element = driver.find_element(By.ID, select_id)
+
+    # Create a Select object
+    select = Select(select_element)
+
+    # Generate a random index between start and end (inclusive)
+    random_index = random.randint(start, end)
+
+    # Select the option at the random index
+    select.select_by_value(str(random_index))
+
+    # Đặt lại sự kiện để chuẩn bị cho vòng lặp tiếp theo
+    time.sleep(sleep_time)
+
+def click_button(driver, button_text, sleep_time=2):
+    next_button_xpath = f"//span[contains(., '{button_text}')]"
+    next_button = driver.find_element(By.XPATH, next_button_xpath)
+    next_button.click()
+    time.sleep(sleep_time)
+
+def fill_input_field(driver, input_name, input_value, sleep_time=3,typing_delay=0.1):
+    input_element = driver.find_element(By.NAME, input_name)
+    input_element.clear()
+    if input_name !="email" :
+        action = ActionChains(driver)
+        for char in input_value:
+            action.send_keys(char)
+            time.sleep(typing_delay)
+
+        action.perform()
+    input_element.send_keys(input_value)
+    time.sleep(sleep_time)
+    # Use ActionChains to simulate typing with a delay between characters
+
+
+    time.sleep(sleep_time)
+
+# Tạo và bắt đầu các luồng
+thread_1 = threading.Thread(target=luong_1)
+thread_2 = threading.Thread(target=luong_2)
+
+thread_1.start()
+thread_2.start()
