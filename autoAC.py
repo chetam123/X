@@ -2,22 +2,29 @@ import threading
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
 import os
 import random
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support import expected_conditions as EC
+import json
+import asyncio
+import time
 from selenium.webdriver.common.action_chains import ActionChains
 
 # Tạo một Event để đồng bộ hóa giữa hai luồng
 data_written_event = threading.Event()
+global data
+data = []
+
+with open('user.json', 'r') as json_file:
+    data = json.load(json_file)
 
 global flag
 flag = False
-
-global code
-code = False
 
 global code2
 code2 = ""
@@ -25,9 +32,10 @@ code2 = ""
 
 # Hàm để chạy trong luồng 1 để thực hiện các thao tác Selenium và ghi dữ liệu vào file
 def luong_1():
+    print("run luong 1")
     global flag  # Tham chiếu đến biến toàn cục
-    global code  # Tham chiếu đến biến toàn cục
     global code2
+    code2 = ""
     # Khởi tạo trình duyệt Selenium với user-data-dir được chỉ định
     chrome_options = ChromeOptions()
     # chrome_options.add_argument('--headless')
@@ -38,7 +46,6 @@ def luong_1():
         service=Service(ChromeDriverManager().install()),
         options=chrome_options
     )
-
     # Mở một trang web
     driver.get("https://internxt.com/temporary-email")
 
@@ -71,47 +78,66 @@ def luong_1():
 
     # In ra màn hình
     print("Element text:", element_text)
+    wait = WebDriverWait(driver, 100)
+    wait.until(lambda driver: flag)
+    print("Element text 1")
 
-    while True:
-        if flag:
-            driver.refresh()
-            time.sleep(1)
+    wait.until(lambda driver: check(driver))
 
-            # Find the <p> element by XPath with class
-            xpath_expression = "//p[contains(@class, 'flex-row') and contains(@class, 'text-sm') and contains(@class, 'font-semibold') and contains(@class, 'line-clamp-2')]"
-            try:
-                # Try to find the <p> element by XPath
-                p_element = driver.find_element(By.XPATH, xpath_expression)
+    xpath_expression = "//p[contains(@class, 'flex-row') and contains(@class, 'text-sm') and contains(@class, 'font-semibold') and contains(@class, 'line-clamp-2')]"
+    # Try to find the <p> element by XPath
+    p_element = driver.find_element(By.XPATH, xpath_expression)
 
-                # Get the text content of the <p> element
-                text_content = p_element.text
+    # Get the text content of the <p> element
+    text_content = p_element.text
 
-                # Tách chuỗi thành danh sách các từ
-                words_list = text_content.split()
+    # Tách chuỗi thành danh sách các từ
+    words_list = text_content.split()
 
-                # Lấy phần tử đầu tiên của danh sách
-                code2 = words_list[0]
-                # Write to a file
+    # Lấy phần tử đầu tiên của danh sách
+    code2 = words_list[0]
 
-                if code2 != "":
-                    code = True
-                    flag = False
-                    print("Extracted data:", code2)
-                    break
-                # Đóng file sau khi hoàn thành
-            except:
-                # Handle the case when the element is not found
-                print("The element with XPath '{}' was not found.".format(xpath_expression))
+    print("Element text 2", code2)
 
-            # Close the WebDriver
+    flag = False
+    # Close the WebDriver
     time.sleep(3)
     driver.quit()
 
 
+def check(driver):
+    driver.refresh()
+    time.sleep(1)
+    xpath_expression = "//p[contains(@class, 'flex-row') and contains(@class, 'text-sm') and contains(@class, 'font-semibold') and contains(@class, 'line-clamp-2')]"
+    try:
+        # Try to find the <p> element by XPath
+        p_element = driver.find_element(By.XPATH, xpath_expression)
+
+        # Get the text content of the <p> element
+        text_content = p_element.text
+
+        # Tách chuỗi thành danh sách các từ
+        words_list = text_content.split()
+
+        # Lấy phần tử đầu tiên của danh sách
+        code2 = words_list[0]
+        # Write to a file
+
+        if code2 != "":
+            code = True
+            flag = False
+            print("Extracted data:", code2)
+        return code2 != ""
+
+    except:
+        # print("The element with XPath '{}' was not found.".format(xpath_expression))
+        return False
+
+
 # Hàm để chạy trong luồng 2 để mở trang Google.com sau khi dữ liệu đã được ghi vào file
-def luong_2():
+async def luong_2():
+    print("run luong 2")
     global flag  # Tham chiếu đến biến toàn cục
-    global code  # Tham chiếu đến biến toàn cục
     global code2
     while True:
         # Đợi sự kiện cho biết dữ liệu đã được ghi
@@ -135,9 +161,9 @@ def luong_2():
                 options=chrome_options
             )
             # Mở trang Google.com bằng Selenium
-            driver = webdriver.Chrome()  # Cần đảm bảo bạn đã cài đặt ChromeDriver và đường dẫn nó trong biến môi trường PATH
-            driver.get('https://twitter.com/')
 
+            driver.get('https://twitter.com/')
+            driver.maximize_window()
             # Ngủ 3 giây (hoặc thời gian cần thiết) để đảm bảo trang web đã mở
             time.sleep(3)
 
@@ -196,13 +222,67 @@ def luong_2():
 
             time.sleep(random.uniform(0.1, 0.3))
 
+            wait = WebDriverWait(driver, 100)
+            desired_url = "/home"
+            print("start Waitingfor authent")
+            wait.until(
+                lambda driver: desired_url in driver.current_url)
+            print("end Waitingfor authent")
+            all_cookies = driver.get_cookies()
+
+            # Tìm giá trị của 'auth_token' trong cookie
+            auth_token = None
+            for cookie in all_cookies:
+                if cookie["name"] == "auth_token":
+                    auth_token = cookie["value"]
+                    break
+
+            # In ra giá trị của auth_token
+            if auth_token:
+                print("Auth Token:", auth_token)
+                driver.refresh()
+                time.sleep(2)
+            else:
+                print("Không tìm thấy auth_token trong cookie.")
+
+            # Chờ cho phần tử xuất hiện trên trang (tối đa 10 giây)
+            element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//span[text()="Profile"]'))
+            )
+
+            # Click vào phần tử
+            element.click()
+
+            # Lấy URL hiện tại
+            current_url = driver.current_url
+            # Tách chuỗi theo dấu "/"
+            url_parts = current_url.split("/")
+
+            # Lấy phần tử cuối cùng của danh sách
+            last_part = url_parts[-1]
+
+            # In ra phần tử cuối cùng
+            print("Phần tử cuối cùng:", last_part)
+
+            new_item = {
+                "name": "@"+last_part,
+                "mail": content,
+                "pass": "Congtam@779",
+                "token": auth_token
+            }
+
+            data.append(new_item)
+            # Save the data list to user.json
+            with open('user.json', 'w') as json_file:
+                json.dump(data, json_file, indent=2)  # indent for better readability (optional)
             data_written_event.clear()
 
             # Ngủ 5 giây (hoặc thời gian cần thiết) để đảm bảo trang web đã mở
-            time.sleep(50)
+            time.sleep(3)
 
             # Đóng trình duyệt
             driver.quit()
+            break
 
         # Ngủ 1 giây trước khi lặp lại
         time.sleep(1)
@@ -263,9 +343,37 @@ def generate_full_name(ho, dem, ten):
     return full_name
 
 
-# Tạo và bắt đầu các luồng
-thread_1 = threading.Thread(target=luong_1)
-thread_2 = threading.Thread(target=luong_2)
 
-thread_1.start()
-thread_2.start()
+# async def mainz():
+#     while True:
+#         # Tạo và bắt đầu các luồng
+#         print("start")
+#         thread_1 = threading.Thread(target=luong_1)
+#         thread_2 = threading.Thread(target=luong_2)
+#
+#         await thread_1.start()
+#         await thread_2.start()
+#
+#         print("end")
+# async def mainz():
+#     # Start both threads concurrently
+#     while True:
+#         print("Start")
+#         await asyncio.gather(
+#             luong_1(),
+#             luong_2()
+#         )
+#         print("end")
+
+# if __name__ == "__main__":
+#     asyncio.run(mainz())
+
+async def main():
+    while True:
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, luong_1)
+        task_2 = asyncio.create_task(luong_2())
+        await asyncio.wait([task_2])
+
+if __name__ == "__main__":
+    asyncio.run(main())

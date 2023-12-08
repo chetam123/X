@@ -7,6 +7,18 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
+import threading
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.wait import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+import time
+import os
+import random
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support import expected_conditions as EC
 import os
 import random
 from selenium.webdriver.support.ui import Select
@@ -24,21 +36,10 @@ driver = webdriver.Chrome(
 driver.get("https://twitter.com/home")
 # Bạn cần đăng nhập thủ công ở đây trước khi chạy tiếp mã JavaScript để lấy cookie
 time.sleep(20)
-# Lấy tất cả các cookie từ trang web hiện tại
-all_cookies = driver.get_cookies()
-
-# Tìm giá trị của 'auth_token' trong cookie
-auth_token = None
-for cookie in all_cookies:
-    if cookie["name"] == "auth_token":
-        auth_token = cookie["value"]
-        break
-
-# In ra giá trị của auth_token
-if auth_token:
-    print("Auth Token:", auth_token)
-else:
-    print("Không tìm thấy auth_token trong cookie.")
-
-# Đóng trình duyệt
-driver.quit()
+# Chờ cho phần tử xuất hiện trên trang (tối đa 10 giây)
+element = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.XPATH, '//span[text()="Profile"]'))
+)
+# Click vào phần tử
+element.click()
+time.sleep(220)

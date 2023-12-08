@@ -1,23 +1,33 @@
+from selenium import webdriver
+import time
+import threading
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+import time
+import os
 import random
+from selenium.webdriver.support.ui import Select
+chrome_options = ChromeOptions()
+# chrome_options.add_argument('--headless')
+# chrome_options.add_argument(f'user-data-dir=C:\\Users\\moret\\OneDrive\\デスクトップ\\py\\Link\\U1')
 
-def read_file(file_name):
-    with open(file_name, 'r', encoding='utf-8') as file:
-        lines = file.readlines()
-    return [line.strip() for line in lines]
+# Khởi tạo trình duyệt
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager().install()),
+    options=chrome_options
+)
 
-def generate_full_name(ho, dem, ten):
-    ho_chon = random.choice(ho)
-    dem_chon = random.choice(dem)
-    ten_chon = random.choice(ten)
+# Mở một trang web
+driver.get("https://github.com/settings/tokens")
 
-    full_name = f"{ho_chon} {dem_chon} {ten_chon}"
-    return full_name
+# Lấy URL hiện tại
+current_url = driver.current_url
 
-# Đọc nội dung từ các file
-ho_list = read_file('Name/Ho/Ho.txt')
-dem_list = read_file('Name/Dem/Dem.txt')
-ten_list = read_file('Name/Ten/Ten.txt')
+# In ra URL
+print("URL hiện tại:", current_url)
 
-# Tạo và in kết quả cuối cùng
-full_name = generate_full_name(ho_list, dem_list, ten_list)
-print(full_name)
+# Đóng trình duyệt
+driver.quit()
