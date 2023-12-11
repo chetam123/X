@@ -5,7 +5,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-import time
 import os
 import random
 from selenium.webdriver.support.ui import Select
@@ -13,15 +12,23 @@ from selenium.webdriver.support import expected_conditions as EC
 import json
 import asyncio
 import time
-from selenium.webdriver.common.action_chains import ActionChains
+import datetime
+import userStorage
 
 # Tạo một Event để đồng bộ hóa giữa hai luồng
 data_written_event = threading.Event()
 global data
-data = []
+global reset
+global path
+global canRequestEmail , StartL1
+StartL1 = True
+path = "C:\\Users\\moret\\Downloads\\xmaster\\"
+# data = []
 
-with open('user.json', 'r') as json_file:
-    data = json.load(json_file)
+# with open('C:\\Users\\moret\\Downloads\\X-master\\X-master\\user.json', 'r') as json_file:
+#     data = json.load(json_file)
+
+# data = userStorage.getAllUser()
 
 global flag
 flag = False
@@ -32,80 +39,90 @@ code2 = ""
 
 # Hàm để chạy trong luồng 1 để thực hiện các thao tác Selenium và ghi dữ liệu vào file
 def luong_1():
+    global canRequestEmail
     print("run luong 1")
-    global flag  # Tham chiếu đến biến toàn cục
-    global code2
-    code2 = ""
-    # Khởi tạo trình duyệt Selenium với user-data-dir được chỉ định
+    global flag, code2, reset, path ,StartL1
+
     chrome_options = ChromeOptions()
-    # chrome_options.add_argument('--headless')
-    # chrome_options.add_argument(f'user-data-dir=C:\\Users\\moret\\OneDrive\\デスクトップ\\py\\Link\\U1')
+    chrome_options.add_argument('--headless')
 
     # Khởi tạo trình duyệt
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=chrome_options
     )
+    driver.set_window_size(1900, 1080)
     # Mở một trang web
     driver.get("https://internxt.com/temporary-email")
 
-    # Đợi 5 giây để trang web tải hoàn chỉnh
-    time.sleep(3)
+    while True:
+        if StartL1 == True :
+            reset = False
+            code2 = ""
+            # Chờ cho nút "Delete email" xuất hiện trong vòng 10 giây
+            delete_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//button[contains(., 'Delete email')]"))
+            )
 
-    # Tìm thẻ button có văn bản là "Delete email" và thực hiện thao tác click
-    delete_button_xpath = "//button[contains(., 'Delete email')]"
-    delete_button = driver.find_element(By.XPATH, delete_button_xpath)
-    delete_button.click()
+            # Thực hiện thao tác click vào nút "Delete email"
+            delete_button.click()
 
-    time.sleep(3)
+            time.sleep(2)
 
-    # Tìm phần tử bằng đường dẫn XPath đầy đủ
-    email_div = driver.find_element(By.XPATH,
-                                    "//div[contains(@class, 'flex') and contains(@class, 'h-full') and contains(@class, 'w-full') and contains(@class, 'cursor-pointer') and contains(@class, 'flex-row') and contains(@class, 'items-center') and contains(@class, 'justify-between') and contains(@class, 'rounded-xl') and contains(@class, 'bg-gray-1') and contains(@class, 'shadow-sm') and contains(@class, 'px-4') and contains(@class, 'py-3')]")
+            WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.XPATH,
+                                                                           "//div[contains(@class, 'flex') and contains(@class, 'h-full') and contains(@class, 'w-full') and contains(@class, 'cursor-pointer') and contains(@class, 'flex-row') and contains(@class, 'items-center') and contains(@class, 'justify-between') and contains(@class, 'rounded-xl') and contains(@class, 'bg-gray-1') and contains(@class, 'shadow-sm') and contains(@class, 'px-4') and contains(@class, 'py-3')]")))
 
-    # Lấy nội dung văn bản của phần tử
-    element_text = email_div.text
+            # Tìm phần tử bằng đường dẫn XPath đầy đủ
+            email_div = WebDriverWait(driver, 3).until(
+                EC.presence_of_element_located((By.XPATH,
+                                                "//div[contains(@class, 'flex') and contains(@class, 'h-full') and contains(@class, 'w-full') and contains(@class, 'cursor-pointer') and contains(@class, 'flex-row') and contains(@class, 'items-center') and contains(@class, 'justify-between') and contains(@class, 'rounded-xl') and contains(@class, 'bg-gray-1') and contains(@class, 'shadow-sm') and contains(@class, 'px-4') and contains(@class, 'py-3')]"))
+            )
+            # Lấy nội dung văn bản của phần tử
+            element_text = email_div.text
 
-    # Ghi nội dung vào file a.txt
-    with open("email.txt", "w", encoding="utf-8") as file:
-        file.write(element_text)
+            # Ghi nội dung vào file a.txt
+            with open(path + "User\\email.txt", "w", encoding="utf-8") as file:
+                file.write(element_text)
 
-    # Đóng file sau khi hoàn thành
-    file.close()
+            # Đóng file sau khi hoàn thành
+            file.close()
 
-    # Đặt sự kiện để thông báo cho luồng 2 rằng dữ liệu đã được ghi
-    data_written_event.set()
+            # Đặt sự kiện để thông báo cho luồng 2 rằng dữ liệu đã được ghi
+            data_written_event.set()
 
-    # In ra màn hình
-    print("Element text:", element_text)
-    wait = WebDriverWait(driver, 100)
-    wait.until(lambda driver: flag)
-    print("Element text 1")
+            # In ra màn hình
+            try:
+                wait = WebDriverWait(driver, 3000)
+                wait.until(lambda driver: flag)
+                wait = WebDriverWait(driver, 15)
+                wait.until(lambda driver: checkCode(driver))
+            except:
+                print("reset 1")
+                reset = True
+                flag = False
+                return
 
-    wait.until(lambda driver: check(driver))
+            xpath_expression = "//p[contains(@class, 'flex-row') and contains(@class, 'text-sm') and contains(@class, 'font-semibold') and contains(@class, 'line-clamp-2')]"
+            # Try to find the <p> element by XPath
+            p_element = driver.find_element(By.XPATH, xpath_expression)
 
-    xpath_expression = "//p[contains(@class, 'flex-row') and contains(@class, 'text-sm') and contains(@class, 'font-semibold') and contains(@class, 'line-clamp-2')]"
-    # Try to find the <p> element by XPath
-    p_element = driver.find_element(By.XPATH, xpath_expression)
+            # Get the text content of the <p> element
+            text_content = p_element.text
 
-    # Get the text content of the <p> element
-    text_content = p_element.text
+            # Tách chuỗi thành danh sách các từ
+            words_list = text_content.split()
 
-    # Tách chuỗi thành danh sách các từ
-    words_list = text_content.split()
+            # Lấy phần tử đầu tiên của danh sách
+            code2 = words_list[0]
 
-    # Lấy phần tử đầu tiên của danh sách
-    code2 = words_list[0]
-
-    print("Element text 2", code2)
-
-    flag = False
-    # Close the WebDriver
-    time.sleep(3)
-    driver.quit()
+            flag = False
+            StartL1 = False
+            # Close the WebDriver
 
 
-def check(driver):
+def checkCode(driver):
+    ct = datetime.datetime.now()
+    print("current time:-", ct)
     driver.refresh()
     time.sleep(1)
     xpath_expression = "//p[contains(@class, 'flex-row') and contains(@class, 'text-sm') and contains(@class, 'font-semibold') and contains(@class, 'line-clamp-2')]"
@@ -139,41 +156,46 @@ async def luong_2():
     print("run luong 2")
     global flag  # Tham chiếu đến biến toàn cục
     global code2
+    global reset , StartL1
     while True:
         # Đợi sự kiện cho biết dữ liệu đã được ghi
         data_written_event.wait()
 
         # Kiểm tra nếu file email.txt có dữ liệu
-        if os.path.exists('email.txt') and os.path.getsize('email.txt') > 0:
+        if os.path.exists(path + "User\\email.txt") and os.path.getsize(
+                path + "User\\email.txt") > 0:
             # Đọc nội dung từ file và in ra màn hình
-            with open("email.txt", "r", encoding="utf-8") as file:
+            with open(path + "User\\email.txt", "r",
+                      encoding="utf-8") as file:
                 content = file.read()
+                print("------------------------------------------------------------")
                 print("Content in email.txt:", content)
 
             # Khởi tạo trình duyệt Selenium với user-data-dir được chỉ định
             chrome_options = ChromeOptions()
             chrome_options.add_argument(f'/Users/dev/Desktop/XProjet/User/U1')
             # chrome_options.add_argument('--headless')
+            chrome_options.add_argument("--lang=vi")
 
             # Khởi tạo trình duyệt
             driver = webdriver.Chrome(
                 service=Service(ChromeDriverManager().install()),
                 options=chrome_options
             )
+            driver.set_window_size(1900, 1080)
             # Mở trang Google.com bằng Selenium
 
             driver.get('https://twitter.com/')
             driver.maximize_window()
             # Ngủ 3 giây (hoặc thời gian cần thiết) để đảm bảo trang web đã mở
-            time.sleep(3)
 
             # nhấn nút Tạo tài khoản
             click_button(driver, 'Tạo tài khoản')
 
             # Đọc nội dung từ các file
-            ho_list = read_file('/Users/dev/Desktop/XProjet/Name/Ho/Ho.txt')
-            dem_list = read_file('/Users/dev/Desktop/XProjet/Name/Dem/Dem.txt')
-            ten_list = read_file('/Users/dev/Desktop/XProjet/Name/Ten/Ten.txt')
+            ho_list = read_file(path + "Name\\Ho\\Ho.txt")
+            dem_list = read_file(path + 'Name\\Dem\\Dem.txt')
+            ten_list = read_file(path + 'Name\\Ten\\Ten.txt')
 
             # Tạo và in kết quả cuối cùng
             full_name = generate_full_name(ho_list, dem_list, ten_list)
@@ -206,10 +228,17 @@ async def luong_2():
             # nhấn nút đăng ký
             click_button(driver, 'Đăng ký')
 
+            wait = WebDriverWait(driver, 300)
+            wait.until(EC.presence_of_element_located((By.XPATH, '//span[text()="Chúng tôi đã gửi mã cho bạn"]')))
+
             flag = True
             while True:
+                if(reset):
+                    print("reset 2")
+                    # Close the WebDriver
+                    driver.quit()
+                    return
                 if code2 != "":
-                    print(f"ma code2'{code2}' ")
                     time.sleep(1)
                     fill_input_field(driver, "verfication_code", code2)
                     # nhấn nút tiếp theo
@@ -217,17 +246,65 @@ async def luong_2():
                     break
             # nhâp Mật khẩu
             fill_input_field(driver, "password", "Congtam@779")
+
+            time.sleep(1)
+
             # nhấn nút tiếp theo
             click_button(driver, 'Tiếp theo')
 
-            time.sleep(random.uniform(0.1, 0.3))
+            try:
+                # Đường dẫn XPath của nút Submit với văn bản "Start"
+                submit_button_xpath = "//input[@type='submit' and @value='Start']"
+
+                # Đợi cho đến khi nút Submit xuất hiện trong vòng 3 giây
+                submit_button = WebDriverWait(driver, 300).until(
+                    EC.presence_of_element_located((By.XPATH, submit_button_xpath))
+                )
+
+                # Thực hiện thao tác click trên nút Submit
+                submit_button.click()
+
+            except Exception as e:
+
+                print("Không tìm thấy nút Submit trong khoảng thời gian chờ.")
+                # Xử lý trường hợp khi nút Submit không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+
+            try:
+                # Đường dẫn XPath của nút Submit với văn bản "Continue to X"
+                submit_button_xpath = "//input[@type='submit' and @value='Continue to X']"
+
+                # Đợi cho đến khi nút Submit xuất hiện trong vòng 3 giây
+                submit_button = WebDriverWait(driver, 300).until(
+                    EC.presence_of_element_located((By.XPATH, submit_button_xpath))
+                )
+
+                # Thực hiện thao tác click trên nút Submit
+                submit_button.click()
+
+            except Exception as e:
+                print("Không tìm thấy nút Submit trong khoảng thời gian chờ.")
+                # Xử lý trường hợp khi nút Submit không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+
+            try:
+                # Đường dẫn XPath của phần tử div với thuộc tính data-testid là "confirmationSheetConfirm"
+                confirmation_div_xpath = "//div[@data-testid='confirmationSheetConfirm']"
+
+                # Đợi cho đến khi phần tử div xuất hiện trong vòng 3 giây
+                confirmation_div = WebDriverWait(driver, 3).until(
+                    EC.presence_of_element_located((By.XPATH, confirmation_div_xpath))
+                )
+
+                # Thực hiện các thao tác trên phần tử div
+                confirmation_div.click()
+
+            except Exception as e:
+                print("Không tìm thấy phần tử div trong khoảng thời gian chờ.")
+                # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
 
             wait = WebDriverWait(driver, 100)
             desired_url = "/home"
-            print("start Waitingfor authent")
             wait.until(
                 lambda driver: desired_url in driver.current_url)
-            print("end Waitingfor authent")
             all_cookies = driver.get_cookies()
 
             # Tìm giá trị của 'auth_token' trong cookie
@@ -241,7 +318,7 @@ async def luong_2():
             if auth_token:
                 print("Auth Token:", auth_token)
                 driver.refresh()
-                time.sleep(2)
+                time.sleep(1)
             else:
                 print("Không tìm thấy auth_token trong cookie.")
 
@@ -265,32 +342,30 @@ async def luong_2():
             print("Phần tử cuối cùng:", last_part)
 
             new_item = {
-                "name": "@"+last_part,
+                "name": "@" + last_part,
                 "mail": content,
                 "pass": "Congtam@779",
                 "token": auth_token
             }
 
-            data.append(new_item)
             # Save the data list to user.json
-            with open('user.json', 'w') as json_file:
-                json.dump(data, json_file, indent=2)  # indent for better readability (optional)
+            userStorage.pushUser(new_item)
+            # Update and save the total user count
+            update_total_user_count()
+
+            StartL1 = True
+
             data_written_event.clear()
 
-            # Ngủ 5 giây (hoặc thời gian cần thiết) để đảm bảo trang web đã mở
-            time.sleep(3)
+            ct = datetime.datetime.now()
+            print("complete :-", ct)
 
             # Đóng trình duyệt
             driver.quit()
             break
 
-        # Ngủ 1 giây trước khi lặp lại
-        time.sleep(1)
 
-
-def select_random_option(driver, select_id, start, end, sleep_time=1):
-    time.sleep(sleep_time)
-
+def select_random_option(driver, select_id, start, end):
     # Find the <select> element by its ID
     select_element = driver.find_element(By.ID, select_id)
 
@@ -302,26 +377,51 @@ def select_random_option(driver, select_id, start, end, sleep_time=1):
 
     # Select the option at the random index
     select.select_by_value(str(random_index))
-
-    # Đặt lại sự kiện để chuẩn bị cho vòng lặp tiếp theo
-    time.sleep(sleep_time)
+    time.sleep(random.uniform(0.1, 0.5))
 
 
-def click_button(driver, button_text, sleep_time=2):
+def click_button(driver, button_text):
+    # Đường dẫn XPath của nút tiếp theo với văn bản mong muốn
     next_button_xpath = f"//span[contains(., '{button_text}')]"
+
+    # Đợi cho đến khi nút tiếp theo xuất hiện
+    WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.XPATH, next_button_xpath)))
+
+    # Tìm nút tiếp theo và thực hiện thao tác click
     next_button = driver.find_element(By.XPATH, next_button_xpath)
     next_button.click()
-    time.sleep(sleep_time)
 
 
-def fill_input_field(driver, input_name, input_value, sleep_time=3, typing_delay=0.1):
+def update_total_user_count():
+    # Check if the totaluser.txt file exists
+    total_user_file_path = path + 'totaluser.txt'
+
+    if os.path.exists(total_user_file_path):
+        with open(total_user_file_path, 'r') as total_user_file:
+            # Read the current count from the file
+            current_count = int(total_user_file.read().strip())
+    else:
+        # If the file doesn't exist, set the count to 0
+        current_count = 0
+
+    # Increment the count
+    current_count += 1
+    print(f"Current User Count Before Increment: {current_count}")
+    # Update the totaluser.txt file with the new count
+    with open(total_user_file_path, 'w') as total_user_file:
+        total_user_file.write(str(current_count))
+
+
+def fill_input_field(driver, input_name, input_value):
     element_found = False
     try:
-        input_element = driver.find_element(By.NAME, input_name)
+        # Đợi cho đến khi phần tử được tìm thấy trong vòng 3 giây
+        input_element = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.NAME, input_name)))
+
+        # Xóa giá trị hiện tại và nhập giá trị mới
         input_element.clear()
         input_element.send_keys(input_value)
-        # Use ActionChains to simulate typing with a delay between characters
-        time.sleep(sleep_time)
+
         element_found = True
     except Exception as e:
         print(f"Không tìm thấy phần tử có tên '{input_name}' hoặc thẻ 'Mật khẩu' không xuất hiện.")
@@ -343,35 +443,10 @@ def generate_full_name(ho, dem, ten):
     return full_name
 
 
-
-# async def mainz():
-#     while True:
-#         # Tạo và bắt đầu các luồng
-#         print("start")
-#         thread_1 = threading.Thread(target=luong_1)
-#         thread_2 = threading.Thread(target=luong_2)
-#
-#         await thread_1.start()
-#         await thread_2.start()
-#
-#         print("end")
-# async def mainz():
-#     # Start both threads concurrently
-#     while True:
-#         print("Start")
-#         await asyncio.gather(
-#             luong_1(),
-#             luong_2()
-#         )
-#         print("end")
-
-# if __name__ == "__main__":
-#     asyncio.run(mainz())
-
 async def main():
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, luong_1)
     while True:
-        loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, luong_1)
         task_2 = asyncio.create_task(luong_2())
         await asyncio.wait([task_2])
 

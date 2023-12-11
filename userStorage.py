@@ -10,16 +10,26 @@ firebase_admin.initialize_app(cred, {
 # Get a database reference to our posts
 ref = db.reference('users')
 
-def pushUser(name, email, password, token):
-    ref.push({
-        "name":  name,
-        "mail": email,
-        "pass": password,
-        "token": token
-    })
-
+def pushUser(data):
+    ref.push(data)
 
 def getAllUser():
     userList = ref.get()
-    flatUsers = [value for obj in userList for value in obj.values()]
+    # print(userList)
+    if(userList == None or userList == "None"):
+        return []
+    flatUsers = [{'id': key, **value} for key, value in userList.items()]
+
+    print(flatUsers)
     return flatUsers
+
+def updateUser(user):
+    userRef = ref.child(user.get("id"))
+    userRef.update({
+        "name":  user.get("name"),
+        "mail": user.get("mail"),
+        "pass": user.get("pass"),
+        "token": user.get("token")
+    })
+
+getAllUser()

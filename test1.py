@@ -12,7 +12,7 @@ import random
 from selenium.webdriver.support.ui import Select
 chrome_options = ChromeOptions()
 # chrome_options.add_argument('--headless')
-# chrome_options.add_argument(f'user-data-dir=C:\\Users\\moret\\OneDrive\\デスクトップ\\py\\Link\\U1')
+chrome_options.add_argument(f'user-data-dir=C:\\Users\\moret\\OneDrive\\デスクトップ\\py\\Link\\U2')
 
 # Khởi tạo trình duyệt
 driver = webdriver.Chrome(
@@ -20,14 +20,7 @@ driver = webdriver.Chrome(
     options=chrome_options
 )
 
-# Mở một trang web
-driver.get("https://github.com/settings/tokens")
-
-# Lấy URL hiện tại
-current_url = driver.current_url
-
-# In ra URL
-print("URL hiện tại:", current_url)
+driver.get("https://twitter.com/home")
 
 # Đóng trình duyệt
 driver.quit()
