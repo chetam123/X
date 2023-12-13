@@ -8,13 +8,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+
+import post
 import userStorage
 global indexUser
-indexUser = 15
+indexUser = 387
 userURL = "ThoThanh49403"
-likeID = 1728353663100613027
-retweetID = 1728353663100613027
-
+likeID = 1725481928663654424
+retweetID = 1725481928663654424
 perform_action = "Follow"
 
 def Follow(username):
@@ -75,6 +76,7 @@ def Follow(username):
             # Click nút theo dõi
             follow_button.click()
             print(f"Bạn đã bắt đầu theo dõi tài khoản {userURL}.")
+            time.sleep(2)
     except Exception as e:
         print(f"Có lỗi xảy ra: {e}")
 
@@ -178,12 +180,12 @@ def retweet(username):
 def login(username):
     global indexUser
     indexUser = indexUser + 1
+    print("----------------------------------------------------")
     print(f"indexUser: {indexUser}")
     id = username['id']
     mail = username['mail']
     name = username['name']
     token = username['token']
-    print(username)
     chrome_options = ChromeOptions()
     # chrome_options.add_argument(f'user-data-dir=C:\\Users\\moret\\OneDrive\\デスクトップ\\py\\Link\\U2')
     # chrome_options.add_argument('--headless')
@@ -221,7 +223,7 @@ def login(username):
         text_input_xpath = "//input[@name='text']"
 
         # Đợi cho đến khi trường nhập liệu xuất hiện trong vòng 30 giây
-        text_input = WebDriverWait(driver, 30).until(
+        text_input = WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.XPATH, text_input_xpath))
         )
 
@@ -251,13 +253,12 @@ def login(username):
         )
 
         # Nếu phần tử tồn tại, đóng trình duyệt
-        print("quit")
+        print("xác nhận code mail")
         driver.quit()
         return
     except Exception as e:
-        print(
-            f"Không tìm thấy phần tử span trong khoảng thời gian chờ 30 giây. Tiếp tục thực hiện công việc khác. Lỗi: {e}")
-        # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+        userStorage.moveToPenddingUser(username)
+        print("không cần xác nhận code mail ")
 
     try:
         # Đợi cho đến khi URL chứa từ khóa "home" trong vòng 10 giây
@@ -277,7 +278,6 @@ def login(username):
 
         # In ra giá trị của auth_token
         if auth_token:
-            print("Auth Token:", auth_token)
             driver.refresh()
             time.sleep(1)
             username['token'] = auth_token
@@ -286,97 +286,99 @@ def login(username):
         else:
             print("Không tìm thấy auth_token trong cookie.")
 
-
-
-    except Exception as e:
-        try:
-            # Đường dẫn XPath của phần tử span với văn bản "Đăng nhập"
-            login_span_xpath = "//span[contains(@class, 'css-1qaijid') and contains(., 'Đăng nhập')]"
-
-            # Đợi cho đến khi phần tử span xuất hiện trong vòng 30 giây
-            login_span = WebDriverWait(driver, 300).until(
-                EC.presence_of_element_located((By.XPATH, login_span_xpath))
-            )
-
-            # Thực hiện thao tác click trên phần tử span
-            login_span.click()
-
-        except Exception as e:
-            print("Không tìm thấy phần tử span trong khoảng thời gian chờ.1111")
-            # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
-        # Thực hiện hành động khi URL không phải "https://twitter.com/home"
-        try:
-            # Đường dẫn XPath của nút Submit với văn bản "Start"
-            submit_button_xpath = "//input[@type='submit' and @value='Start']"
-
-            # Đợi cho đến khi nút Submit xuất hiện trong vòng 3 giây
-            submit_button = WebDriverWait(driver, 300).until(
-                EC.presence_of_element_located((By.XPATH, submit_button_xpath))
-            )
-
-            # Thực hiện thao tác click trên nút Submit
-            submit_button.click()
-
-        except Exception as e:
-
-            print("Không tìm thấy nút Submit trong khoảng thời gian chờ.")
-            # Xử lý trường hợp khi nút Submit không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
-
-        try:
-            # Đường dẫn XPath của phần tử với văn bản "Phone, email, or username"
-            element_xpath = "//span[contains(text(), 'Phone, email, or username')]"
-
-            # Đợi cho đến khi phần tử xuất hiện trong vòng 30 giây
-            element = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, element_xpath))
-            )
-
-            # Thực hiện các thao tác khác sau khi phần tử xuất hiện (nếu cần)
-
-        except Exception as e:
-            print(f"Không tìm thấy phần tử trong khoảng thời gian chờ 30 giây. Lỗi: {e}")
-            # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
-
-        try:
-            # Đường dẫn XPath của phần tử input
-            input_xpath = "//input[@data-testid='ocfEnterTextTextInput']"
-
-            # Đợi cho đến khi phần tử input xuất hiện trong vòng 30 giây
-            input_element = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, input_xpath))
-            )
-
-            # Thực hiện các thao tác khác sau khi phần tử xuất hiện (nếu cần)
-
-        except Exception as e:
-            print(f"Không tìm thấy phần tử input trong khoảng thời gian chờ 30 giây. Lỗi: {e}")
-            # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
-
-        time.sleep(2)
-        try:
-            # Đường dẫn XPath của nút Submit với văn bản "Continue to X"
-            submit_button_xpath = "//input[@type='submit' and @value='Continue to X']"
-
-            # Đợi cho đến khi nút Submit xuất hiện trong vòng 3 giây
-            submit_button = WebDriverWait(driver, 300).until(
-                EC.presence_of_element_located((By.XPATH, submit_button_xpath))
-            )
-
-            # Thực hiện thao tác click trên nút Submit
-            submit_button.click()
-
-        except Exception as e:
-            print("Không tìm thấy nút Submit trong khoảng thời gian chờ.")
-            # Xử lý trường hợp khi nút Submit không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
-
-            all_cookies = driver.get_cookies()
-            # Tìm giá trị của 'auth_token' trong cookie
-
         time.sleep(1)
-
-    finally:
-        # Đóng trình duyệt (hoặc thực hiện các bước khác nếu cần thiết)
-        driver.quit()
+        post.post(driver)
+    except Exception as e:
+        userStorage.moveToAuthUser(username)
+    #     try:
+    #         # Đường dẫn XPath của phần tử span với văn bản "Đăng nhập"
+    #         login_span_xpath = "//span[contains(@class, 'css-1qaijid') and contains(., 'Đăng nhập')]"
+    #
+    #         # Đợi cho đến khi phần tử span xuất hiện trong vòng 30 giây
+    #         login_span = WebDriverWait(driver, 300).until(
+    #             EC.presence_of_element_located((By.XPATH, login_span_xpath))
+    #         )
+    #
+    #         # Thực hiện thao tác click trên phần tử span
+    #         login_span.click()
+    #
+    #     except Exception as e:
+    #         print("Không tìm thấy phần tử span trong khoảng thời gian chờ.1111")
+    #         # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+    #     # Thực hiện hành động khi URL không phải "https://twitter.com/home"
+    #     try:
+    #         # Đường dẫn XPath của nút Submit với văn bản "Start"
+    #         submit_button_xpath = "//input[@type='submit' and @value='Start']"
+    #
+    #         # Đợi cho đến khi nút Submit xuất hiện trong vòng 3 giây
+    #         submit_button = WebDriverWait(driver, 300).until(
+    #             EC.presence_of_element_located((By.XPATH, submit_button_xpath))
+    #         )
+    #
+    #         # Thực hiện thao tác click trên nút Submit
+    #         submit_button.click()
+    #
+    #     except Exception as e:
+    #
+    #         print("Không tìm thấy nút Submit trong khoảng thời gian chờ.")
+    #         # Xử lý trường hợp khi nút Submit không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+    #
+    #     # try:
+    #     #     # Đường dẫn XPath của phần tử với văn bản "Phone, email, or username"
+    #     #     element_xpath = "//span[contains(text(), 'Phone, email, or username')]"
+    #     #
+    #     #     # Đợi cho đến khi phần tử xuất hiện trong vòng 30 giây
+    #     #     element = WebDriverWait(driver, 30).until(
+    #     #         EC.presence_of_element_located((By.XPATH, element_xpath))
+    #     #     )
+    #     #
+    #     #     # Thực hiện các thao tác khác sau khi phần tử xuất hiện (nếu cần)
+    #     #
+    #     # except Exception as e:
+    #     #     print(f"Không tìm thấy phần tử trong khoảng thời gian chờ 30 giây. Lỗi: {e}")
+    #     #     # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+    #
+    #     # try:
+    #     #     # Đường dẫn XPath của phần tử input
+    #     #     input_xpath = "//input[@data-testid='ocfEnterTextTextInput']"
+    #     #
+    #     #     # Đợi cho đến khi phần tử input xuất hiện trong vòng 30 giây
+    #     #     input_element = WebDriverWait(driver, 30).until(
+    #     #         EC.presence_of_element_located((By.XPATH, input_xpath))
+    #     #     )
+    #     #
+    #     #     # Thực hiện các thao tác khác sau khi phần tử xuất hiện (nếu cần)
+    #     #
+    #     # except Exception as e:
+    #     #     print(f"Không tìm thấy phần tử input trong khoảng thời gian chờ 30 giây. Lỗi: {e}")
+    #     #     # Xử lý trường hợp khi phần tử không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+    #
+    #
+    #     try:
+    #         time.sleep(1)
+    #         # Đường dẫn XPath của nút Submit với văn bản "Continue to X"
+    #         submit_button_xpath = "//input[@type='submit' and @value='Continue to X']"
+    #
+    #         # Đợi cho đến khi nút Submit xuất hiện trong vòng 3 giây
+    #         submit_button = WebDriverWait(driver, 300).until(
+    #             EC.presence_of_element_located((By.XPATH, submit_button_xpath))
+    #         )
+    #
+    #         # Thực hiện thao tác click trên nút Submit
+    #         submit_button.click()
+    #
+    #     except Exception as e:
+    #         print("Không tìm thấy nút Submit trong khoảng thời gian chờ.")
+    #         # Xử lý trường hợp khi nút Submit không được tìm thấy hoặc không xuất hiện (ví dụ: thử lại hoặc ném một ngoại lệ)
+    #
+    #         all_cookies = driver.get_cookies()
+    #         # Tìm giá trị của 'auth_token' trong cookie
+    #
+    #     time.sleep(1)
+    #
+    # finally:
+    #     # Đóng trình duyệt (hoặc thực hiện các bước khác nếu cần thiết)
+    #     driver.quit()
 
 
 def click_button(driver, button_text):
@@ -384,7 +386,7 @@ def click_button(driver, button_text):
     next_button_xpath = f"//span[contains(., '{button_text}')]"
 
     # Đợi cho đến khi nút tiếp theo xuất hiện
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, next_button_xpath)))
+    WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.XPATH, next_button_xpath)))
 
     # Tìm nút tiếp theo và thực hiện thao tác click
     next_button = driver.find_element(By.XPATH, next_button_xpath)
@@ -415,7 +417,6 @@ def run_threads(credentials_list, action):
             thread.start()
         for thread in threads:
             thread.join()
-        print("Hoàn thành một loạt")
 
     print("Tất cả các luồng đã hoàn thành")
 

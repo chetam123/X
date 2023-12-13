@@ -13,6 +13,8 @@ import json
 import asyncio
 import time
 import datetime
+
+import post
 import userStorage
 
 # Tạo một Event để đồng bộ hóa giữa hai luồng
@@ -359,7 +361,7 @@ async def luong_2():
 
             ct = datetime.datetime.now()
             print("complete :-", ct)
-
+            post.post(driver)
             # Đóng trình duyệt
             driver.quit()
             break
@@ -410,7 +412,6 @@ def update_total_user_count():
     # Update the totaluser.txt file with the new count
     with open(total_user_file_path, 'w') as total_user_file:
         total_user_file.write(str(current_count))
-
 
 def fill_input_field(driver, input_name, input_value):
     element_found = False

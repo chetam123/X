@@ -24,7 +24,17 @@ def getAllUser():
         return []
     flatUsers = [{'id': key, **value} for key, value in userList.items()]
 
-    print(len(flatUsers))
+    # print(len(flatUsers))
+    return flatUsers
+
+def getAllAuthUser():
+    userList = refAuth.get()
+    # print(userList)
+    if(userList == None or userList == "None"):
+        return []
+    flatUsers = [{'id': key, **value} for key, value in userList.items()]
+
+    # print(flatUsers)
     return flatUsers
 
 # Tao user thuong
@@ -39,6 +49,7 @@ def updateUser(user):
 
 # chuyen tu user thuong sang danh sach cho xac nhan
 def moveToAuthUser(user):
+    print("vao dau roi moveToAuthUser")
     srcRef = ref.child(user.get("id"))
     srcRef.delete()
     destRef= refAuth.child(user.get("id"))
@@ -51,6 +62,7 @@ def moveToAuthUser(user):
 
 # chuyen tu danh sach cho xac nhan sang user thuong
 def moveFromAuthToUser(user):
+    print("vao dau roi moveFromAuthToUser")
     srcRef = refAuth.child(user.get("id"))
     srcRef.delete()
     destRef = ref.child(user.get("id"))
@@ -63,6 +75,7 @@ def moveFromAuthToUser(user):
 
 # chuyen tu user thuong sang danh sach user bi yeu cau nhap ma code
 def moveToPenddingUser(user):
+    print("vao dau roi moveToPenddingUser")
     srcRef = ref.child(user.get("id"))
     srcRef.delete()
     destRef = refPenddingUser.child(user.get("id"))
@@ -75,6 +88,7 @@ def moveToPenddingUser(user):
 
 # chuyen tu user thuong sang danh sach user bi yeu cau nhap ma code
 def moveFromPenddingToUser(user):
+    print("vao dau roi moveFromPenddingToUser")
     srcRef = refPenddingUser.child(user.get("id"))
     srcRef.delete()
     destRef = ref.child(user.get("id"))
@@ -91,7 +105,8 @@ def moveFromPenddingToUser(user):
 
 user = {'id': '-NlCAevh9KlKwGPu1ySY', 'mail': '983cb56574036d@crankymonkey.info', 'name': '@duy_gia5830', 'pass': 'Congtam@779', 'token': '9657a302e3f31e25e090d451fe79a9ab535502b0'}
 # moveToAuthUser(user)
-# moveFromAuthToUser(user)
-# moveToPenddingUser(user)
-# moveFromPenddingToUser(user)
+# moveFromAuthToUser(user) xt -> user
+# moveToPenddingUser(user) code mail
+# moveFromPenddingToUser(user) code mail  -> user
 # getAllUser()
+# getAllAuthUser()
